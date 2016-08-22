@@ -89,30 +89,35 @@ void TCmd::processKey(std::string & key)
 {
 	try
 	{
-		bool bExist = false;
 		std::string keyRes;
 		regex exp("([a-zA-Z]+)([0-9]{1})$");
 		match_results<std::string::const_iterator> mr;
 
 		if (regex_search(key, mr, exp, match_default))
-			keyRes = mr[1] + "?";
+			keyRes = mr[1] + "?";	// ? replace index of commander in settings
 		else
 			keyRes = key;
+
+		// Check if this shortcut's valid
+
+		bool bValid = false;
 
 		for (auto it : m_keyMap)
 		{
 			if (it.first.find(keyRes, 0) == 0)
 			{
-				bExist = true;
-				if (it.first == keyRes)
+				if (it.first == keyRes)	// Totally match, send command
 				{
 					sendCmds(it.second, mr[2]);
 					key.clear();
 				}
+
+				bValid = true;
+				break;
 			}
 		}
 
-		if (!bExist)
+		if (!bValid)
 			key.clear();
 	}
 	catch (...)
@@ -128,9 +133,14 @@ void TCmd::sendCmds(std::string cmds, std::string index)
 	{
 		std::vector<std::string> vecSplit;
 
-		split(vecSplit, cmds, is_any_of(","), token_compress_on);
-		for (auto c : vecSplit)
-			::PostMessage(m_hMain, WM_TCMD, m_cmds[c.append(index)], NULL);
+		split(vecSplit, cmds, is_any_of(","), token_compress_on);	// Command string may be consist by a sequence of commands separated by comma
+		for (auto cmd : vecSplit)
+		{
+			cmd += index;
+			auto iter = m_cmds.find(cmd);
+			if (iter != m_cmds.end())
+				::PostMessage(m_hMain, WM_TCMD, iter->second, NULL);
+		}
 	}
 	catch (...)
 	{
