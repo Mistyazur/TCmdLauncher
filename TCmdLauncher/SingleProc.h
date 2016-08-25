@@ -9,7 +9,7 @@ public:
 
 	~SingleProc()
 	{
-
+		close();
 	}
 
 	BOOL init(LPCTSTR lpName)
@@ -27,15 +27,14 @@ public:
 
 	BOOL exists(LPCTSTR lpName)
 	{
-		BOOL exist;
+		BOOL exist = FALSE;
 
 		if (open(lpName, sizeof(BOOL), FALSE))
-		{
-			if (read(&exist, sizeof(BOOL)) && exist)
-				return TRUE;
-		}
+			read(&exist, sizeof(BOOL));
 
-		return FALSE;
+		close();
+
+		return exist;
 	}
 
 private:
