@@ -62,19 +62,19 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
 	if (nCode == HC_ACTION)
 	{
+		static TCHAR szClass[MAX_PATH] = {};
 		static TCmd tcmd(g_szConFile);
-		static std::string key;
+		static std::string keySequence;
 
 		MSG *pMsg = (MSG*)lParam;
 		if (pMsg->message == WM_KEYDOWN)
 		{
 			// Clear key after switching window
 			if ((pMsg->wParam == VK_TAB) || (pMsg->wParam == VK_ESCAPE))
-				key.clear();
+				keySequence.clear();
 		}
 		else if (pMsg->message == WM_CHAR)
 		{
-			static TCHAR szClass[MAX_PATH] = {};
 			::GetClassName(pMsg->hwnd, szClass, MAX_PATH);
 			BLW(Trace) << pMsg->hwnd << " " << pMsg->message << " " << pMsg->wParam << " " << pMsg->lParam << " " << szClass;
 
@@ -87,37 +87,38 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 			{
 				if (_tcscmp(szClass, _T("TLister")) == 0)
 				{
-					if (key.empty() && pMsg->wParam == 'j')
+					if (keySequence.empty())
 					{
-						tcmd.sendVScroll(pMsg->hwnd, 1, 6);
-					}
-					else if (key.empty() && pMsg->wParam == 'k')
-					{
-						tcmd.sendVScroll(pMsg->hwnd, 0, 6);
+						if (pMsg->wParam == 'j')
+							tcmd.sendVScroll(pMsg->hwnd, 1, 6);
+						else if (pMsg->wParam == 'k')
+							tcmd.sendVScroll(pMsg->hwnd, 0, 6);
 					}
 				}
 				else if (_tcscmp(szClass, _T("TMyListBox")) == 0)
 				{
-					if (key.empty() && pMsg->wParam == 'j')
+					if (keySequence.empty())
 					{
-						tcmd.sendKey(pMsg->hwnd, VK_DOWN);
+						if (pMsg->wParam == 'j')
+							tcmd.sendKey(pMsg->hwnd, VK_DOWN);
+						else if (pMsg->wParam == 'k')
+							tcmd.sendKey(pMsg->hwnd, VK_UP);
 					}
-					else if (key.empty() && pMsg->wParam == 'k')
+					else
 					{
-						tcmd.sendKey(pMsg->hwnd, VK_UP);
+						if ((0x20 < pMsg->wParam) && (pMsg->wParam < 0x7F))
+						{
+							keySequence += (CHAR)pMsg->wParam;
+							tcmd.processCmd(keySequence);
+						}
 					}
-					else if ((0x20 < pMsg->wParam) && (pMsg->wParam < 0x7F))
-					{
-						key += (CHAR)pMsg->wParam;
-						tcmd.processKey(key);
-					}
-
-					// Reset key to null
-					pMsg->wParam = NULL;
 				}
+
+				// Reset key to null
+				pMsg->wParam = NULL;
 			}
 		}
-		tcmd.setStatusText(key);
+		tcmd.setStatusText(keySequence);
 	}
 	return CallNextHookEx(g_hMsgHook, nCode, wParam, lParam);
 }

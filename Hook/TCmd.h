@@ -12,7 +12,7 @@ public:
 	void setStatusText(const std::string& str);
 	void sendVScroll(HWND hwnd, int downUp, int c);
 	void sendKey(HWND hwnd, int keyCode);
-	void processKey(std::string & key);
+	void processCmd(std::string & key);
 private:
 	HWND m_hMain;
 	std::map<std::string, int> m_cmds;	// Command map in TOTALCMD.INC

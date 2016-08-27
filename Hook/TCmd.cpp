@@ -61,13 +61,13 @@ TCmd::~TCmd()
 {
 }
 
-void TCmd::setStatusText(const std::string & str)
+void TCmd::setStatusText(const std::string & keySequence)
 {
 	std::string status;
-	if (str.empty())
+	if (keySequence.empty())
 		status = "Normal";
 	else
-		status = "Insert: " + str;
+		status = "Insert: " + keySequence;
 
 	::SetWindowTextA(m_hMain, status.c_str());
 }
@@ -91,16 +91,16 @@ void TCmd::sendKey(HWND hwnd, int keyCode)
 	::Sleep(1);
 }
 
-void TCmd::processKey(std::string & key)
+void TCmd::processCmd(std::string & keySequence)
 {
-	std::string keyRes;
+	std::string keySequenceWithoutID;
 	regex exp("([a-zA-Z]+)([0-9]+)$");
 	match_results<std::string::const_iterator> mr;
 
-	if (regex_search(key, mr, exp, match_default))
-		keyRes = mr[1] + "?";	// ? replace index of commander in settings
+	if (regex_search(keySequence, mr, exp, match_default))
+		keySequenceWithoutID = mr[1] + "?";	// ? replace index of commander in settings
 	else
-		keyRes = key;
+		keySequenceWithoutID = keySequence;
 
 	// Check if this shortcut's valid
 
@@ -108,12 +108,12 @@ void TCmd::processKey(std::string & key)
 
 	for (auto it : m_keyMap)
 	{
-		if (it.first.find(keyRes, 0) == 0)
+		if (it.first.find(keySequenceWithoutID, 0) == 0)
 		{
-			if (it.first == keyRes)	// Totally match, send command
+			if (it.first == keySequenceWithoutID)	// Totally match, send command
 			{
 				sendCmds(it.second, mr[2]);
-				key.clear();
+				keySequence.clear();
 			}
 
 			bValid = true;
@@ -122,7 +122,7 @@ void TCmd::processKey(std::string & key)
 	}
 
 	if (!bValid)
-		key.clear();
+		keySequence.clear();
 }
 
 void TCmd::sendCmds(std::string cmds, std::string index)
