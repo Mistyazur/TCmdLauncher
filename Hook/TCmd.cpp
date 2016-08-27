@@ -94,45 +94,40 @@ void TCmd::sendKey(HWND hwnd, int keyCode)
 void TCmd::processCmd(std::string & keySequence)
 {
 	std::string keySequenceWithoutID;
-	regex exp("([a-zA-Z]+)([0-9]+)$");
-	match_results<std::string::const_iterator> mr;
+	std::string cmdIndex;
+	regex exp("^([0-9]*)([a-zA-Z]+)$");
+	match_results<std::string::const_iterator> matchRes;
 
-	if (regex_search(keySequence, mr, exp, match_default))
-		keySequenceWithoutID = mr[1] + "?";	// ? replace index of commander in settings
-	else
-		keySequenceWithoutID = keySequence;
+	if (!regex_search(keySequence, matchRes, exp, match_default))
+		return;
+
+	if (matchRes.size() == 3)
+		cmdIndex = matchRes[1];
+
+	keySequenceWithoutID = matchRes[matchRes.size() - 1];
 
 	// Check if this shortcut's valid
 
-	bool bValid = false;
-
 	for (auto it : m_keyMap)
 	{
-		if (it.first.find(keySequenceWithoutID, 0) == 0)
+		if (it.first == keySequenceWithoutID)	// Totally match, send command
 		{
-			if (it.first == keySequenceWithoutID)	// Totally match, send command
-			{
-				sendCmds(it.second, mr[2]);
-				keySequence.clear();
-			}
+			sendCmds(it.second, cmdIndex);
+			keySequence.clear();
 
-			bValid = true;
 			break;
 		}
 	}
-
-	if (!bValid)
-		keySequence.clear();
 }
 
-void TCmd::sendCmds(std::string cmds, std::string index)
+void TCmd::sendCmds(std::string cmds, std::string cmdIndex)
 {
 	std::vector<std::string> vecSplit;
 
 	split(vecSplit, cmds, is_any_of(","), token_compress_on);	// Command string may be consist by a sequence of commands separated by comma
 	for (auto cmd : vecSplit)
 	{
-		cmd += index;
+		cmd += cmdIndex;
 		auto iter = m_cmds.find(cmd);
 		if (iter != m_cmds.end())
 			::PostMessage(m_hMain, WM_TCMD, iter->second, NULL);

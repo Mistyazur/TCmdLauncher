@@ -87,23 +87,17 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 			{
 				if (_tcscmp(szClass, _T("TLister")) == 0)
 				{
-					if (keySequence.empty())
-					{
-						if (pMsg->wParam == 'j')
-							tcmd.sendVScroll(pMsg->hwnd, 1, 6);
-						else if (pMsg->wParam == 'k')
-							tcmd.sendVScroll(pMsg->hwnd, 0, 6);
-					}
+					if ((pMsg->wParam == 'j') && keySequence.empty())
+						tcmd.sendVScroll(pMsg->hwnd, 1, 6);
+					else if ((pMsg->wParam == 'k') && keySequence.empty())
+						tcmd.sendVScroll(pMsg->hwnd, 0, 6);
 				}
 				else if (_tcscmp(szClass, _T("TMyListBox")) == 0)
 				{
-					if (keySequence.empty())
-					{
-						if (pMsg->wParam == 'j')
-							tcmd.sendKey(pMsg->hwnd, VK_DOWN);
-						else if (pMsg->wParam == 'k')
-							tcmd.sendKey(pMsg->hwnd, VK_UP);
-					}
+					if ((pMsg->wParam == 'j') && keySequence.empty())
+						tcmd.sendKey(pMsg->hwnd, VK_DOWN);
+					else if ((pMsg->wParam == 'k') && keySequence.empty())
+						tcmd.sendKey(pMsg->hwnd, VK_UP);
 					else
 					{
 						if ((0x20 < pMsg->wParam) && (pMsg->wParam < 0x7F))

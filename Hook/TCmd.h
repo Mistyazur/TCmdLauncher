@@ -18,6 +18,6 @@ private:
 	std::map<std::string, int> m_cmds;	// Command map in TOTALCMD.INC
 	std::map<std::string, std::string> m_keyMap;	// Shortcut map set in TCmdLuancher.ini
 
-	void sendCmds(std::string cmds, std::string index);
+	void sendCmds(std::string cmds, std::string cmdIndex);
 };
 
