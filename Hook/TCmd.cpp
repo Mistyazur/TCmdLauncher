@@ -87,65 +87,49 @@ void TCmd::sendKey(HWND hwnd, int keyCode)
 
 void TCmd::processKey(std::string & key)
 {
-	try
+	std::string keyRes;
+	regex exp("([a-zA-Z]+)([0-9]+)$");
+	match_results<std::string::const_iterator> mr;
+
+	if (regex_search(key, mr, exp, match_default))
+		keyRes = mr[1] + "?";	// ? replace index of commander in settings
+	else
+		keyRes = key;
+
+	// Check if this shortcut's valid
+
+	bool bValid = false;
+
+	for (auto it : m_keyMap)
 	{
-		std::string keyRes;
-		regex exp("([a-zA-Z]+)([0-9]{1})$");
-		match_results<std::string::const_iterator> mr;
-
-		if (regex_search(key, mr, exp, match_default))
-			keyRes = mr[1] + "?";	// ? replace index of commander in settings
-		else
-			keyRes = key;
-
-		// Check if this shortcut's valid
-
-		bool bValid = false;
-
-		for (auto it : m_keyMap)
+		if (it.first.find(keyRes, 0) == 0)
 		{
-			if (it.first.find(keyRes, 0) == 0)
+			if (it.first == keyRes)	// Totally match, send command
 			{
-				if (it.first == keyRes)	// Totally match, send command
-				{
-					sendCmds(it.second, mr[2]);
-					key.clear();
-				}
-
-				bValid = true;
-				break;
+				sendCmds(it.second, mr[2]);
+				key.clear();
 			}
+
+			bValid = true;
+			break;
 		}
-
-		if (!bValid)
-			key.clear();
-	}
-	catch (...)
-	{
-		BLW(Fatal) << "processKey " << "exception";
 	}
 
+	if (!bValid)
+		key.clear();
 }
 
 void TCmd::sendCmds(std::string cmds, std::string index)
 {
-	try
-	{
-		std::vector<std::string> vecSplit;
+	std::vector<std::string> vecSplit;
 
-		split(vecSplit, cmds, is_any_of(","), token_compress_on);	// Command string may be consist by a sequence of commands separated by comma
-		for (auto cmd : vecSplit)
-		{
-			cmd += index;
-			auto iter = m_cmds.find(cmd);
-			if (iter != m_cmds.end())
-				::PostMessage(m_hMain, WM_TCMD, iter->second, NULL);
-		}
-	}
-	catch (...)
+	split(vecSplit, cmds, is_any_of(","), token_compress_on);	// Command string may be consist by a sequence of commands separated by comma
+	for (auto cmd : vecSplit)
 	{
-		BLW(Fatal) << "processKey " << "exception";
+		cmd += index;
+		auto iter = m_cmds.find(cmd);
+		if (iter != m_cmds.end())
+			::PostMessage(m_hMain, WM_TCMD, iter->second, NULL);
 	}
-
 }
 

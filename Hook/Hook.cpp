@@ -69,7 +69,7 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 		if (pMsg->message == WM_KEYDOWN)
 		{
 			// Clear key after switching window
-			if (pMsg->wParam == VK_TAB)
+			if ((pMsg->wParam == VK_TAB) || (pMsg->wParam == VK_ESCAPE))
 				key.clear();
 		}
 		else if (pMsg->message == WM_CHAR)
@@ -106,9 +106,7 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 					{
 						tcmd.sendKey(pMsg->hwnd, VK_UP);
 					}
-					else if (pMsg->wParam == VK_ESCAPE)
-						key.clear();
-					else
+					else if ((0x20 < pMsg->wParam) && (pMsg->wParam < 0x7F))
 					{
 						key += (CHAR)pMsg->wParam;
 						tcmd.processKey(key);
