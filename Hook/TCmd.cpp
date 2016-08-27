@@ -63,7 +63,13 @@ TCmd::~TCmd()
 
 void TCmd::setStatusText(const std::string & str)
 {
-	::SetWindowTextA(m_hMain, str.c_str());
+	std::string status;
+	if (str.empty())
+		status = "Normal";
+	else
+		status = "Insert: " + str;
+
+	::SetWindowTextA(m_hMain, status.c_str());
 }
 
 void TCmd::sendVScroll(HWND hwnd, int downUp, int c)
