@@ -91,6 +91,9 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 						tcmd.sendVScroll(pMsg->hwnd, 1, 6);
 					else if ((pMsg->wParam == 'k') && keySequence.empty())
 						tcmd.sendVScroll(pMsg->hwnd, 0, 6);
+
+					// Key remove
+					pMsg->wParam = NULL;
 				}
 				else if (_tcscmp(szClass, _T("TMyListBox")) == 0)
 				{
@@ -106,10 +109,10 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 							tcmd.processCmd(keySequence);
 						}
 					}
-				}
 
-				// Reset key to null
-				pMsg->wParam = NULL;
+					// Key remove
+					pMsg->wParam = NULL;
+				}
 			}
 		}
 		tcmd.setStatusText(keySequence);
