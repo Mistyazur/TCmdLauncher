@@ -95,7 +95,7 @@ void TCmd::processCmd(std::string & keySequence)
 {
 	std::string keySequenceWithoutID;
 	std::string cmdIndex;
-	regex exp("^([0-9]*)([a-zA-Z]+)$");
+	regex exp("^(\\d*)(\\D+)$");
 	match_results<std::string::const_iterator> matchRes;
 
 	if (!regex_search(keySequence, matchRes, exp, match_default))

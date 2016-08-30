@@ -65,18 +65,21 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 		static TCHAR szClass[MAX_PATH] = {};
 		static TCmd tcmd(g_szConFile);
 		static std::string keySequence;
-
 		MSG *pMsg = (MSG*)lParam;
+
+		::GetClassName(pMsg->hwnd, szClass, MAX_PATH);
+
 		if (pMsg->message == WM_KEYDOWN)
 		{
+			BLW(Trace) << "KEYDOWN " << pMsg->hwnd << " " << szClass << " " << pMsg->wParam << " " << pMsg->lParam;
+
 			// Clear key after switching window
 			if ((pMsg->wParam == VK_TAB) || (pMsg->wParam == VK_ESCAPE))
 				keySequence.clear();
 		}
 		else if (pMsg->message == WM_CHAR)
 		{
-			::GetClassName(pMsg->hwnd, szClass, MAX_PATH);
-			BLW(Trace) << pMsg->hwnd << " " << pMsg->message << " " << pMsg->wParam << " " << pMsg->lParam << " " << szClass;
+			BLW(Trace) << "CHAR " << pMsg->hwnd << " " << szClass << " " << pMsg->wParam << " " << pMsg->lParam;
 
 			if (pMsg->lParam & 0x10000000)
 			{
