@@ -33,7 +33,6 @@ namespace pt = boost::property_tree;
 
 #define LAUNCHER_NAME	TEXT("TCmdLauncher")
 #define APP_GROUP_ID	TEXT("TOTALCMD")
-#define APP_LNK_NAME	TEXT("TCmdLauncher.lnk")
 
 TCmdLauncher::TCmdLauncher()
 {
