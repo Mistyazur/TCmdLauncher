@@ -31,19 +31,14 @@ DWORD GetMainThreadId(DWORD dwProcID)
 		THREADENTRY32 th32;
 		th32.dwSize = sizeof(THREADENTRY32);
 		BOOL bOK = TRUE;
-		for (bOK = ::Thread32First(hThreadSnap, &th32); bOK; bOK = ::Thread32Next(hThreadSnap, &th32)) 
-		{
-			if (th32.th32OwnerProcessID == dwProcID) 
-			{
+		for (bOK = ::Thread32First(hThreadSnap, &th32); bOK; bOK = ::Thread32Next(hThreadSnap, &th32)) {
+			if (th32.th32OwnerProcessID == dwProcID) {
 				HANDLE hThread = ::OpenThread(THREAD_QUERY_INFORMATION, TRUE, th32.th32ThreadID);
-				if (hThread) 
-				{
-					FILETIME afTimes[4] = {0};
-					if (::GetThreadTimes(hThread,	&afTimes[0], &afTimes[1], &afTimes[2], &afTimes[3])) 
-					{
-						ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime,	afTimes[0].dwHighDateTime);
-						if (ullTest && ullTest < ullMinCreateTime) 
-						{
+				if (hThread) {
+					FILETIME afTimes[4] = { 0 };
+					if (::GetThreadTimes(hThread, &afTimes[0], &afTimes[1], &afTimes[2], &afTimes[3])) {
+						ULONGLONG ullTest = MAKEULONGLONG(afTimes[0].dwLowDateTime, afTimes[0].dwHighDateTime);
+						if (ullTest && ullTest < ullMinCreateTime) {
 							ullMinCreateTime = ullTest;
 							dwMainThreadID = th32.th32ThreadID; // let it be main... :)
 						}
@@ -60,8 +55,7 @@ DWORD GetMainThreadId(DWORD dwProcID)
 
 LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
-	if (nCode == HC_ACTION)
-	{
+	if (nCode == HC_ACTION) {
 		static TCHAR szClass[MAX_PATH] = {};
 		static TCmd tcmd(g_szConFile);
 		static std::string keySequence;
@@ -69,27 +63,20 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 
 		::GetClassName(pMsg->hwnd, szClass, MAX_PATH);
 
-		if (pMsg->message == WM_KEYDOWN)
-		{
+		if (pMsg->message == WM_KEYDOWN) {
 			BLW(Trace) << "KEYDOWN " << pMsg->hwnd << " " << szClass << " " << pMsg->wParam << " " << pMsg->lParam;
 
 			// Clear key after switching window
 			if ((pMsg->wParam == VK_TAB) || (pMsg->wParam == VK_ESCAPE))
 				keySequence.clear();
-		}
-		else if (pMsg->message == WM_CHAR)
-		{
+		} else if (pMsg->message == WM_CHAR) {
 			BLW(Trace) << "CHAR " << pMsg->hwnd << " " << szClass << " " << pMsg->wParam << " " << pMsg->lParam;
 
-			if (pMsg->lParam & 0x10000000)
-			{
+			if (pMsg->lParam & 0x10000000) {
 				// 31 bit of lParam: The transition state.The value is 1 if the key is being released, or it is 0 if the key is being pressed.
 				// Means it's a pop up window
-			}
-			else
-			{
-				if (_tcscmp(szClass, _T("TLister")) == 0)
-				{
+			} else {
+				if (_tcscmp(szClass, _T("TLister")) == 0) {
 					if ((pMsg->wParam == 'j') && keySequence.empty())
 						tcmd.sendVScroll(pMsg->hwnd, 1, 6);
 					else if ((pMsg->wParam == 'k') && keySequence.empty())
@@ -97,17 +84,17 @@ LRESULT WINAPI MsgHook(int nCode, WPARAM wParam, LPARAM lParam)
 
 					// Key remove
 					pMsg->wParam = NULL;
-				}
-				else if (_tcscmp(szClass, _T("TMyListBox")) == 0)
-				{
+#ifndef _M_X64
+				} else if (_tcscmp(szClass, _T("TMyListBox")) == 0) {
+#else
+				} else if (_tcscmp(szClass, _T("LCLListBox")) == 0) {
+#endif
 					if ((pMsg->wParam == 'j') && keySequence.empty())
 						tcmd.sendKey(pMsg->hwnd, VK_DOWN);
 					else if ((pMsg->wParam == 'k') && keySequence.empty())
 						tcmd.sendKey(pMsg->hwnd, VK_UP);
-					else
-					{
-						if ((0x20 < pMsg->wParam) && (pMsg->wParam < 0x7F))
-						{
+					else {
+						if ((0x20 < pMsg->wParam) && (pMsg->wParam < 0x7F)) {
 							keySequence += (CHAR)pMsg->wParam;
 							tcmd.processCmd(keySequence);
 						}
@@ -128,6 +115,7 @@ extern "C" __declspec(dllexport) BOOL InstallHook(DWORD dwPID, LPCSTR szConFile)
 	DWORD dwThreadId;
 
 	dwThreadId = GetMainThreadId(dwPID);
+
 	if (dwThreadId > 0)
 		g_hMsgHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)MsgHook, g_inst, dwThreadId);
 

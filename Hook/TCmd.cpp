@@ -29,10 +29,8 @@ TCmd::TCmd(LPCSTR szConFile)
 	// Read commands
 	pt::ptree tree;
 	pt::read_ini(cmdsFile, tree);
-	for (auto b : tree)
-	{
-		for (auto p : b.second)
-		{
+	for (auto b : tree) {
+		for (auto p : b.second) {
 			std::string& cmd = p.second.get_value<std::string>();
 			m_cmds.insert(std::pair<std::string, int>(p.first, lexical_cast<int>(cmd.c_str(), cmd.find_first_of(";"))));
 		}
@@ -41,15 +39,12 @@ TCmd::TCmd(LPCSTR szConFile)
 	// Read shortcuts
 	pt::read_ini(szConFile, tree);
 	auto it = tree.find("KeyMap");
-	if (it != tree.not_found())
-	{
-		for (auto p : it->second)
-		{
+	if (it != tree.not_found()) {
+		for (auto p : it->second) {
 			std::string key = p.first;
 			std::string& cmd = p.second.get_value<std::string>();
 
-			if (key.find("map ", 0) == 0)
-			{
+			if (key.find("map ", 0) == 0) {
 				key.erase(0, 4);
 				m_keyMap.insert(std::pair<std::string, std::string>(key, cmd));
 			}
@@ -74,8 +69,7 @@ void TCmd::setStatusText(const std::string & keySequence)
 
 void TCmd::sendVScroll(HWND hwnd, int downUp, int c)
 {
-	for (int i = 0; i < c; ++i)
-	{
+	for (int i = 0; i < c; ++i) {
 		if (downUp == 0)
 			::PostMessage(hwnd, WM_VSCROLL, SB_LINEUP, 0);
 		else
@@ -108,16 +102,20 @@ void TCmd::processCmd(std::string & keySequence)
 
 	// Check if this shortcut's valid
 
-	for (auto it : m_keyMap)
-	{
-		if (it.first == keySequenceWithoutID)	// Totally match, send command
-		{
+	bool valid = false;
+	for (auto it : m_keyMap) {
+		if (it.first == keySequenceWithoutID) {
+			// Totally match, send command
 			sendCmds(it.second, cmdIndex);
 			keySequence.clear();
 
 			break;
-		}
+		} else if (it.first.find(keySequenceWithoutID) == 0)
+			valid = true;
 	}
+
+	if (!valid)
+		keySequence.clear();
 }
 
 void TCmd::sendCmds(std::string cmds, std::string cmdIndex)
@@ -125,8 +123,7 @@ void TCmd::sendCmds(std::string cmds, std::string cmdIndex)
 	std::vector<std::string> vecSplit;
 
 	split(vecSplit, cmds, is_any_of(","), token_compress_on);	// Command string may be consist by a sequence of commands separated by comma
-	for (auto cmd : vecSplit)
-	{
+	for (auto cmd : vecSplit) {
 		cmd += cmdIndex;
 		auto iter = m_cmds.find(cmd);
 		if (iter != m_cmds.end())

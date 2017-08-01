@@ -20,9 +20,9 @@
 #include <Shlobj.h>
 
 #ifndef _M_X64
-#pragma comment(lib, "../Release/Hook.lib")
+#pragma comment(lib, "../Release/Hook32.lib")
 #else
-#pragma comment(lib, "../x64/Release/Hook.lib")
+#pragma comment(lib, "../x64/Release/Hook64.lib")
 #endif // !_M_X64
 
 using namespace std;
@@ -60,23 +60,26 @@ BOOL TCmdLauncher::exec()
 	pt::wptree tree;
 	pt::read_ini(configFile, tree);
 	bool bAutoFreeCheck = tree.get<bool>(TEXT("TotalCommander.AutoFreeCheck"), false);
-	wstring tcmdExeFile = tree.get<wstring>(TEXT("TotalCommander.ExeFile"), TEXT(""));
+
+#ifndef _M_X64
+	wstring tcmdExeFile = tree.get<wstring>(TEXT("TotalCommander.Exe32File"), TEXT(""));
+#else
+	wstring tcmdExeFile = tree.get<wstring>(TEXT("TotalCommander.Exe64File"), TEXT(""));
+#endif
 	wstring tcmdConFile = tree.get<wstring>(TEXT("TotalCommander.ConFile"), TEXT(""));
 	wstring tcmdFtpFile = tree.get<wstring>(TEXT("TotalCommander.FtpFile"), TEXT(""));
 
 	// Run Total commander
 	wstring cmd = (wformat(_T("%s /I=%s /F=%s"))
-		% fs::absolute(tcmdExeFile).c_str()
-		% fs::absolute(tcmdConFile).c_str()
-		% fs::absolute(tcmdFtpFile).c_str()).str();
+				   % fs::absolute(tcmdExeFile).c_str()
+				   % fs::absolute(tcmdConFile).c_str()
+				   % fs::absolute(tcmdFtpFile).c_str()).str();
 	STARTUPINFO si = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION pi;
-	if (::CreateProcess(NULL, (LPWSTR)cmd.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
-	{
+	if (::CreateProcess(NULL, (LPWSTR)cmd.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
 		// Get hwnd of total commander
 		HWND hTCmd;
-		do
-		{
+		do {
 			hTCmd = ::FindWindow(TCMD_CLASS, NULL);
 		} while (NULL == hTCmd);
 
@@ -101,8 +104,7 @@ BOOL TCmdLauncher::exec()
 		// change the link target path to this launcher.
 
 		TCHAR szPath[MAX_PATH];
-		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath)))
-		{
+		if (SUCCEEDED(SHGetFolderPath(NULL, CSIDL_APPDATA, NULL, 0, szPath))) {
 
 			std::wstring taskBarPath(szPath);
 			taskBarPath += TEXT("\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
@@ -112,17 +114,12 @@ BOOL TCmdLauncher::exec()
 				return FALSE;
 
 			fs::recursive_directory_iterator end_iter;
-			for (fs::recursive_directory_iterator iter(fullpath); iter != end_iter; iter++)
-			{
-				try
-				{
-					if (!fs::is_directory(*iter))
-					{
-						if (Launcher::getLnkAppPath(iter->path().wstring().c_str(), szPath, MAX_PATH))
-						{
+			for (fs::recursive_directory_iterator iter(fullpath); iter != end_iter; iter++) {
+				try {
+					if (!fs::is_directory(*iter)) {
+						if (Launcher::getLnkAppPath(iter->path().wstring().c_str(), szPath, MAX_PATH)) {
 							fs::path targetPath(szPath);
-							if (boost::iequals(targetPath.filename().wstring(), fs::path(tcmdExeFile).filename().wstring()))
-							{
+							if (boost::iequals(targetPath.filename().wstring(), fs::path(tcmdExeFile).filename().wstring())) {
 								if (::GetModuleFileName(NULL, szPath, MAX_PATH) > 0)
 									Launcher::setLnkAppPath(iter->path().wstring().c_str(), szPath);
 
@@ -131,8 +128,7 @@ BOOL TCmdLauncher::exec()
 						}
 					}
 				}
-				catch (const std::exception & ex)
-				{
+				catch (const std::exception & ex) {
 					continue;
 				}
 			}
@@ -150,13 +146,11 @@ VOID TCmdLauncher::autoFreeUserCheck()
 	HWND hFreeCheckLabel;
 	TCHAR szInfo[16];
 
-	do
-	{
+	do {
 		hFreeCheck = ::FindWindow(_T("TNASTYNAGSCREEN"), NULL);
 	} while (NULL == hFreeCheck);
 
-	while (TRUE)
-	{
+	while (TRUE) {
 		hFreeCheckLabel = hFreeCheck;
 		for (int i = 0; i < 4; ++i)
 			hFreeCheckLabel = ::GetWindow(hFreeCheckLabel, GW_CHILD);
@@ -167,7 +161,7 @@ VOID TCmdLauncher::autoFreeUserCheck()
 		else
 			::Sleep(100);
 	}
-	
+
 	UINT nKey = (UINT)szInfo[0];
 	::PostMessage(hFreeCheck, WM_KEYDOWN, nKey, (0x00 << 24) | (MapVirtualKey(nKey, 0) << 16) | 0x0001);
 	::Sleep(1);
@@ -193,9 +187,9 @@ BOOL ActivateTCMD()
 }
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPTSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+					   _In_opt_ HINSTANCE hPrevInstance,
+					   _In_ LPTSTR    lpCmdLine,
+					   _In_ int       nCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
@@ -207,8 +201,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Check single process
 
 	SingleProc sProc;
-	if (sProc.exists(LAUNCHER_NAME))
-	{
+	if (sProc.exists(LAUNCHER_NAME)) {
 		ActivateTCMD();
 		return 0;
 	}
