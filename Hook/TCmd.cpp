@@ -8,8 +8,6 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/algorithm/string.hpp>
 
-#define TCMD_INC "TOTALCMD.INC"
-#define WM_TCMD	WM_USER + 0x33
 
 using namespace boost;
 namespace fs = boost::filesystem;
@@ -19,24 +17,8 @@ TCmd::TCmd(LPCSTR szConFile)
 {
 	m_hMain = ::FindWindow(TCMD_CLASS, NULL);
 
-	// Get commander file path
-	TCHAR szTCmdPath[MAX_PATH];
-	::GetModuleFileName(NULL, szTCmdPath, MAX_PATH);
-	std::string cmdsFile = fs::path(szTCmdPath).parent_path().string();
-	cmdsFile.append("\\");
-	cmdsFile.append(TCMD_INC);
-
-	// Read commands
-	pt::ptree tree;
-	pt::read_ini(cmdsFile, tree);
-	for (auto b : tree) {
-		for (auto p : b.second) {
-			std::string& cmd = p.second.get_value<std::string>();
-			m_cmds.insert(std::pair<std::string, int>(p.first, lexical_cast<int>(cmd.c_str(), cmd.find_first_of(";"))));
-		}
-	}
-
 	// Read shortcuts
+	pt::ptree tree;
 	pt::read_ini(szConFile, tree);
 	auto it = tree.find("KeyMap");
 	if (it != tree.not_found()) {
@@ -106,7 +88,7 @@ void TCmd::processCmd(std::string & keySequence)
 	for (auto it : m_keyMap) {
 		if (it.first == keySequenceWithoutID) {
 			// Totally match, send command
-			sendCmds(it.second, cmdIndex);
+			sendCmd(it.second, cmdIndex);
 			keySequence.clear();
 
 			break;
@@ -118,16 +100,15 @@ void TCmd::processCmd(std::string & keySequence)
 		keySequence.clear();
 }
 
-void TCmd::sendCmds(std::string cmds, std::string cmdIndex)
+void TCmd::sendCmd(std::string cmd, std::string cmdIndex)
 {
-	std::vector<std::string> vecSplit;
+	cmd += cmdIndex;
 
-	split(vecSplit, cmds, is_any_of(","), token_compress_on);	// Command string may be consist by a sequence of commands separated by comma
-	for (auto cmd : vecSplit) {
-		cmd += cmdIndex;
-		auto iter = m_cmds.find(cmd);
-		if (iter != m_cmds.end())
-			::PostMessage(m_hMain, WM_TCMD, iter->second, NULL);
-	}
+	COPYDATASTRUCT copyStruct = {0};
+	copyStruct.dwData = 'E' + 256 * 'M';
+	copyStruct.cbData = cmd.length() + 1;
+	copyStruct.lpData = (PVOID)cmd.c_str();
+
+	::SendMessage(m_hMain, WM_COPYDATA, (WPARAM)NULL, (LPARAM)&copyStruct);
 }
 
